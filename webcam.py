@@ -15,4 +15,7 @@ while rval:
     key = cv2.waitKey(20)
     if key == 27: # exit on ESC
         break
+    depth = get_depth(frame)
+    direction = navigate(depth)
+    display(depth, direction)
 cv2.destroyWindow("preview")
