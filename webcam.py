@@ -1,4 +1,5 @@
 import cv2
+from model import init_model
 
 cv2.namedWindow("preview")
 vc = cv2.VideoCapture(1)
@@ -8,6 +9,8 @@ if vc.isOpened(): # try to get the first frame
 else:
     rval = False
     print('Reading failed')
+
+model = init_model()
 
 while rval:
     cv2.imshow("preview", frame)
