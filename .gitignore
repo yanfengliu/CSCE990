@@ -15,3 +15,6 @@ pre_trained/model-1000977.ckpt.meta
 pre_trained/model-1000977.data-00000-of-00001
 pre_trained/model-1000977.index
 pre_trained/model-1000977.meta
+*.index
+*.data-00000-of-00001
+*.meta
