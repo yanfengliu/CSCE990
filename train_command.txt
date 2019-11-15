@@ -1,0 +1,1 @@
+python -m train --data_dir=train --checkpoint_dir=ckpts --imagenet_ckpt=pre_trained/model-1000977

@@ -143,8 +143,9 @@ class Model(object):
             self.input_file,
             queue_size=self.queue_size)
 
-        (self.image_stack, self.image_stack_norm, self.seg_stack,
-         self.intrinsic_mat, _) = self.reader.read_data()
+        (self.image_stack, self.image_stack_norm) = self.reader.read_data()
+        # [h, w, 3 * seq_length]
+        self.seg_stack = tf.zeros_like(self.image_stack, dtype=tf.uint8)
         if self.learn_intrinsics:
             self.intrinsic_mat = None
         if self.intrinsic_mat is None and not self.learn_intrinsics:

@@ -70,42 +70,18 @@ class DataReader(object):
         with tf.name_scope('data_loading'):
             with tf.name_scope('enqueue_paths'):
                 seed = random.randint(0, 2**31 - 1)
-                self.file_lists = self.compile_file_list(
-                    self.data_dir, self.input_file)
+                self.file_lists = self.compile_file_list(self.data_dir)
                 image_paths_queue = tf.train.string_input_producer(
                     self.file_lists['image_file_list'], seed=seed,
                     shuffle=self.shuffle,
                     num_epochs=(1 if not self.shuffle else None)
                 )
-                seg_paths_queue = tf.train.string_input_producer(
-                    self.file_lists['segment_file_list'], seed=seed,
-                    shuffle=self.shuffle,
-                    num_epochs=(1 if not self.shuffle else None))
-                cam_paths_queue = tf.train.string_input_producer(
-                    self.file_lists['cam_file_list'], seed=seed,
-                    shuffle=self.shuffle,
-                    num_epochs=(1 if not self.shuffle else None))
                 img_reader = tf.WholeFileReader()
                 _, image_contents = img_reader.read(image_paths_queue)
-                seg_reader = tf.WholeFileReader()
-                _, seg_contents = seg_reader.read(seg_paths_queue)
                 if self.file_extension == 'jpg':
                     image_seq = tf.image.decode_jpeg(image_contents)
-                    seg_seq = tf.image.decode_jpeg(seg_contents, channels=3)
                 elif self.file_extension == 'png':
                     image_seq = tf.image.decode_png(image_contents, channels=3)
-                    seg_seq = tf.image.decode_png(seg_contents, channels=3)
-
-            with tf.name_scope('load_intrinsics'):
-                cam_reader = tf.TextLineReader()
-                _, raw_cam_contents = cam_reader.read(cam_paths_queue)
-                rec_def = []
-                for _ in range(9):
-                    rec_def.append([1.0])
-                raw_cam_vec = tf.decode_csv(
-                    raw_cam_contents, record_defaults=rec_def)
-                raw_cam_vec = tf.stack(raw_cam_vec)
-                intrinsics = tf.reshape(raw_cam_vec, [3, 3])
 
             with tf.name_scope('convert_image'):
                 # Converts to float.
@@ -116,27 +92,20 @@ class DataReader(object):
                     image_seq = self.augment_image_colorspace(image_seq)
 
             image_stack = self.unpack_images(image_seq)
-            seg_stack = self.unpack_images(seg_seq)
 
             if self.flipping_mode != FLIP_NONE:
                 random_flipping = (self.flipping_mode == FLIP_RANDOM)
                 with tf.name_scope('image_augmentation_flip'):
-                    image_stack, seg_stack, intrinsics = self.augment_images_flip(
-                        image_stack, seg_stack, intrinsics,
+                    image_stack = self.augment_images_flip(
+                        image_stack,
                         randomized=random_flipping)
 
             if self.random_scale_crop:
                 with tf.name_scope('image_augmentation_scale_crop'):
-                    image_stack, seg_stack, intrinsics = self.augment_images_scale_crop(
-                        image_stack, seg_stack, intrinsics, self.img_height,
+                    image_stack = self.augment_images_scale_crop(
+                        image_stack, 
+                        self.img_height,
                         self.img_width)
-
-            with tf.name_scope('multi_scale_intrinsics'):
-                intrinsic_mat = self.get_multi_scale_intrinsics(intrinsics,
-                                                                self.num_scales)
-                intrinsic_mat.set_shape([self.num_scales, 3, 3])
-                intrinsic_mat_inv = tf.matrix_inverse(intrinsic_mat)
-                intrinsic_mat_inv.set_shape([self.num_scales, 3, 3])
 
             if self.imagenet_norm:
                 im_mean = tf.tile(
@@ -149,24 +118,19 @@ class DataReader(object):
 
             with tf.name_scope('batching'):
                 if self.shuffle:
-                    (image_stack, image_stack_norm, seg_stack, intrinsic_mat,
-                     intrinsic_mat_inv) = tf.train.shuffle_batch(
-                         [image_stack, image_stack_norm, seg_stack, intrinsic_mat,
-                          intrinsic_mat_inv],
+                    (image_stack, image_stack_norm) = tf.train.shuffle_batch(
+                         [image_stack, image_stack_norm],
                          batch_size=self.batch_size,
                          num_threads=self.threads,
                          capacity=self.queue_size + QUEUE_BUFFER * self.batch_size,
                          min_after_dequeue=self.queue_size)
                 else:
-                    (image_stack, image_stack_norm, seg_stack, intrinsic_mat,
-                     intrinsic_mat_inv) = tf.train.batch(
-                         [image_stack, image_stack_norm, seg_stack, intrinsic_mat,
-                          intrinsic_mat_inv],
+                    (image_stack, image_stack_norm) = tf.train.batch(
+                         [image_stack, image_stack_norm],
                          batch_size=self.batch_size,
                          num_threads=1,
                          capacity=self.queue_size + QUEUE_BUFFER * self.batch_size)
-        return (image_stack, image_stack_norm, seg_stack, intrinsic_mat,
-                intrinsic_mat_inv)
+        return (image_stack, image_stack_norm)
 
     def unpack_images(self, image_seq):
         """[h, w * seq_length, 3] -> [h, w, 3 * seq_length]."""
@@ -225,36 +189,28 @@ class DataReader(object):
         return image_stack_aug
 
     @classmethod
-    def augment_images_flip(cls, image_stack, seg_stack, intrinsics,
-                            randomized=True):
+    def augment_images_flip(cls, image_stack, randomized=True):
         """Randomly flips the image horizontally."""
 
-        def flip(cls, image_stack, seg_stack, intrinsics):
+        def flip(cls, image_stack):
             _, in_w, _ = image_stack.get_shape().as_list()
-            fx = intrinsics[0, 0]
-            fy = intrinsics[1, 1]
-            cx = in_w - intrinsics[0, 2]
-            cy = intrinsics[1, 2]
-            intrinsics = cls.make_intrinsics_matrix(fx, fy, cx, cy)
-            return (tf.image.flip_left_right(image_stack),
-                    tf.image.flip_left_right(seg_stack), intrinsics)
+            return tf.image.flip_left_right(image_stack)
 
         if randomized:
             prob = tf.random_uniform(shape=[], minval=0.0, maxval=1.0,
                                      dtype=tf.float32)
             predicate = tf.less(prob, 0.5)
             return tf.cond(predicate,
-                           lambda: flip(cls, image_stack,
-                                        seg_stack, intrinsics),
-                           lambda: (image_stack, seg_stack, intrinsics))
+                           lambda: flip(cls, image_stack),
+                           lambda: image_stack)
         else:
-            return flip(cls, image_stack, seg_stack, intrinsics)
+            return flip(cls, image_stack)
 
     @classmethod
-    def augment_images_scale_crop(cls, im, seg, intrinsics, out_h, out_w):
+    def augment_images_scale_crop(cls, im, out_h, out_w):
         """Randomly scales and crops image."""
 
-        def scale_randomly(im, seg, intrinsics):
+        def scale_randomly(im):
             """Scales image and adjust intrinsics accordingly."""
             in_h, in_w, _ = im.get_shape().as_list()
             scaling = tf.random_uniform([2], 1, 1.15)
@@ -266,18 +222,10 @@ class DataReader(object):
             im = tf.expand_dims(im, 0)
             im = tf.image.resize_area(im, [out_h, out_w])
             im = im[0]
-            seg = tf.expand_dims(seg, 0)
-            seg = tf.image.resize_area(seg, [out_h, out_w])
-            seg = seg[0]
-            fx = intrinsics[0, 0] * x_scaling
-            fy = intrinsics[1, 1] * y_scaling
-            cx = intrinsics[0, 2] * x_scaling
-            cy = intrinsics[1, 2] * y_scaling
-            intrinsics = cls.make_intrinsics_matrix(fx, fy, cx, cy)
-            return im, seg, intrinsics
+            return im
 
         # Random cropping
-        def crop_randomly(im, seg, intrinsics, out_h, out_w):
+        def crop_randomly(im, out_h, out_w):
             """Crops image and adjust intrinsics accordingly."""
             # batch_size, in_h, in_w, _ = im.get_shape().as_list()
             in_h, in_w, _ = tf.unstack(tf.shape(im))
@@ -287,52 +235,22 @@ class DataReader(object):
                 [1], 0, in_w - out_w + 1, dtype=tf.int32)[0]
             im = tf.image.crop_to_bounding_box(
                 im, offset_y, offset_x, out_h, out_w)
-            seg = tf.image.crop_to_bounding_box(
-                seg, offset_y, offset_x, out_h, out_w)
-            fx = intrinsics[0, 0]
-            fy = intrinsics[1, 1]
-            cx = intrinsics[0, 2] - tf.cast(offset_x, dtype=tf.float32)
-            cy = intrinsics[1, 2] - tf.cast(offset_y, dtype=tf.float32)
-            intrinsics = cls.make_intrinsics_matrix(fx, fy, cx, cy)
-            return im, seg, intrinsics
+            return im
 
-        im, seg, intrinsics = scale_randomly(im, seg, intrinsics)
-        im, seg, intrinsics = crop_randomly(im, seg, intrinsics, out_h, out_w)
-        return im, seg, intrinsics
+        im = scale_randomly(im)
+        im = crop_randomly(im)
+        return im
 
-    def compile_file_list(self, data_dir, split, load_pose=False):
+    def compile_file_list(self, data_dir):
         """Creates a list of input files."""
         logging.info('data_dir: %s', data_dir)
-        with gfile.Open(os.path.join(data_dir, '%s.txt' % split), 'r') as f:
-            frames = f.readlines()
-            frames = [k.rstrip() for k in frames]
-        subfolders = [x.split(' ')[0] for x in frames]
-        frame_ids = [x.split(' ')[1] for x in frames]
+        image_list = os.listdir(data_dir)
         image_file_list = [
-            os.path.join(data_dir, subfolders[i], frame_ids[i] + '.' +
-                         self.file_extension)
-            for i in range(len(frames))
-        ]
-        segment_file_list = [
-            os.path.join(data_dir, subfolders[i], frame_ids[i] + '-fseg.' +
-                         self.file_extension)
-            for i in range(len(frames))
-        ]
-        cam_file_list = [
-            os.path.join(data_dir, subfolders[i], frame_ids[i] + '_cam.txt')
-            for i in range(len(frames))
+            os.path.join(data_dir, image_list[i])
+            for i in range(len(data_dir))
         ]
         file_lists = {}
         file_lists['image_file_list'] = image_file_list
-        file_lists['segment_file_list'] = segment_file_list
-        file_lists['cam_file_list'] = cam_file_list
-        if load_pose:
-            pose_file_list = [
-                os.path.join(
-                    data_dir, subfolders[i], frame_ids[i] + '_pose.txt')
-                for i in range(len(frames))
-            ]
-            file_lists['pose_file_list'] = pose_file_list
         self.steps_per_epoch = len(image_file_list) // self.batch_size
         return file_lists
 

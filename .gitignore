@@ -8,3 +8,10 @@ model_zoo/model.ckpt.index
 model_zoo/model.ckpt.meta
 *.png
 *.MOV
+pre_trained/model-1000977.ckpt.index
+pre_trained/model-1000977.ckpt.data-00000-of-00001
+pre_trained/model-1000977.ckpt.meta
+*.DESKTOP-03IKE6B
+pre_trained/model-1000977.data-00000-of-00001
+pre_trained/model-1000977.index
+pre_trained/model-1000977.meta
