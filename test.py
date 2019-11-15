@@ -16,7 +16,7 @@ from depth_model import *
 
 FLAGS = Params()
 FLAGS.input_dir = 'input'
-FLAGS.output_dir = 'ouptut'
+FLAGS.output_dir = 'output'
 FLAGS.checkpoint_path = 'pre_trained/model.ckpt'
 FLAGS.img_height = 128
 FLAGS.img_width = 416

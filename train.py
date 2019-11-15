@@ -71,7 +71,7 @@ flags.DEFINE_string('checkpoint_dir', None, 'Directory to save model '
 
 flags.DEFINE_integer('train_steps', int(1e6), 'Number of training steps.')
 
-flags.DEFINE_integer('summary_freq', 100, 'Save summaries every N steps.')
+flags.DEFINE_integer('summary_freq', 1, 'Save summaries every N steps.')
 
 flags.DEFINE_bool('debug', False, 'If true, one training step is performed and '
                   'the results are dumped to a folder for debugging.')
