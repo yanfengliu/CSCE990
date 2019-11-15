@@ -193,7 +193,6 @@ class DataReader(object):
         """Randomly flips the image horizontally."""
 
         def flip(cls, image_stack):
-            _, in_w, _ = image_stack.get_shape().as_list()
             return tf.image.flip_left_right(image_stack)
 
         if randomized:
@@ -238,17 +237,14 @@ class DataReader(object):
             return im
 
         im = scale_randomly(im)
-        im = crop_randomly(im)
+        im = crop_randomly(im, out_h, out_w)
         return im
 
     def compile_file_list(self, data_dir):
         """Creates a list of input files."""
         logging.info('data_dir: %s', data_dir)
         image_list = os.listdir(data_dir)
-        image_file_list = [
-            os.path.join(data_dir, image_list[i])
-            for i in range(len(data_dir))
-        ]
+        image_file_list = [os.path.join(data_dir, x) for x in image_list]
         file_lists = {}
         file_lists['image_file_list'] = image_file_list
         self.steps_per_epoch = len(image_file_list) // self.batch_size
