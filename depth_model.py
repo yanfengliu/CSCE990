@@ -57,7 +57,7 @@ def process_video(inference_model, sess, FLAGS):
         ret, frame = cap.read()
         if ret == True:
             frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_LINEAR)
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             cv2.imwrite(f'output/color/{count}.png', frame)
             frame = np.expand_dims(frame, axis=0)
             frame = frame.astype(np.float32) / 255.0

@@ -31,12 +31,14 @@ filelist.sort(key=lambda f: int(f.split('.')[0]))
 for filename in filelist:
     if count < 2000:
         color = cv2.imread(os.path.join(root_dir, 'color', filename))
+        color = cv2.cvtColor(color, cv2.COLOR_RGB2BGR)
         depth = cv2.imread(os.path.join(root_dir, 'depth', filename))
         board = np.zeros((128, 416*2, 3))
         board[:, :416, :] = color
         board[:, 416:, :] = depth
         board = board * 255
         board = board.astype(np.uint8)
+        # need to be BGR format
         out.write(board)
         count += 1
         print(count)
