@@ -6,3 +6,5 @@ model_zoo/model-1000977.meta
 model_zoo/model.ckpt.data-00000-of-00001
 model_zoo/model.ckpt.index
 model_zoo/model.ckpt.meta
+*.png
+*.MOV
