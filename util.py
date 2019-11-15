@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
-CMAP_DEFAULT = 'plasma'
+CMAP_DEFAULT = 'gray'
 
 
 def prep_image_for_model(image):
