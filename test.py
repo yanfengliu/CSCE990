@@ -10,17 +10,14 @@ from absl import app, flags, logging
 
 import model
 import util
+from params import Params
 from depth_model import *
 
-
-class Params():
-    def __init__(self):
-        pass
 
 FLAGS = Params()
 FLAGS.input_dir = 'input'
 FLAGS.output_dir = 'ouptut'
-FLAGS.checkpoint_path = 'model_zoo'
+FLAGS.checkpoint_path = 'model_zoo/model.ckpt'
 FLAGS.img_height = 128
 FLAGS.img_width = 416
 

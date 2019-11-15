@@ -1,5 +1,17 @@
 import cv2
-from model import init_model
+import numpy as np
+
+import depth_model
+import util
+from params import Params
+
+FLAGS = Params()
+FLAGS.input_dir = 'input'
+FLAGS.output_dir = 'ouptut'
+FLAGS.checkpoint_path = 'model_zoo/model.ckpt'
+FLAGS.img_height = 128
+FLAGS.img_width = 416
+
 
 cv2.namedWindow("preview")
 vc = cv2.VideoCapture(1)
@@ -10,15 +22,16 @@ else:
     rval = False
     print('Reading failed')
 
-model = init_model()
+inference_model, sess = depth_model.init_inference_model(FLAGS)
 
 while rval:
-    cv2.imshow("preview", frame)
-    rval, frame = vc.read()
+    rval, image = vc.read()
+    image = util.prep_image(image)
+    depth = inference_model.inference_depth(image, sess)
+    depth = np.squeeze(depth)
+    depth = util.normalize_depth_for_display(depth)
+    cv2.imshow("preview", depth)
     key = cv2.waitKey(20)
     if key == 27: # exit on ESC
         break
-    depth = get_depth(frame)
-    direction = navigate(depth)
-    display(depth, direction)
 cv2.destroyWindow("preview")

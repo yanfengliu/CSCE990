@@ -6,6 +6,14 @@ import tensorflow as tf
 CMAP_DEFAULT = 'plasma'
 
 
+def prep_image(image):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = cv2.resize(image, (416, 128), interpolation=cv2.INTER_LINEAR)
+    image = image.astype(np.float32) / 255.0
+    image = np.expand_dims(image, axis=0)
+    return image
+
+
 def load_image(file_path, resize=None, interpolation='linear'):
     """Load image from disk. Output value range: [0,1]."""
     im = cv2.imread(file_path)

@@ -9,7 +9,9 @@ from absl import logging
 import numpy as np
 import tensorflow as tf
 import util
+import matplotlib.pyplot as plt 
 import model
+import cv2
 
 
 def init_inference_model(FLAGS):
@@ -32,8 +34,9 @@ def process_folder(inference_model, sess, FLAGS):
     image_list = os.listdir(FLAGS.input_dir)
     for image_name in image_list:
         image_path = os.path.join(FLAGS.input_dir, image_name)
-        image = util.load_image(image_path)
+        image = util.load_image(image_path, resize=(416, 128))
         image = np.expand_dims(image, axis=0)
         depth = inference_model.inference_depth(image, sess)
+        depth = np.squeeze(depth)
         depth = util.normalize_depth_for_display(depth)
-        cv2.imwrite(os.path.join(FLAGS.output_dir, f'depth-{image_name}', depth))
+        cv2.imwrite(os.path.join(FLAGS.output_dir, f'depth-{image_name}'), depth)
