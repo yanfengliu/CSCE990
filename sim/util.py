@@ -14,7 +14,7 @@ def to_tuple(corners):
     return [tuple(i) for i in corners]
 
 
-def get_dist(image, img_size, robot_coord, angle_vector):
+def get_dist_at_angle(image, img_size, robot_coord, angle_vector):
     [col_robot, row_robot] = robot_coord
     [col_old, row_old] = robot_coord
     [col_angle, row_angle] = robot_coord

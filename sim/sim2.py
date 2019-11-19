@@ -65,7 +65,7 @@ angle_list = np.linspace(0, num_angles-1, num_angles)
 
 now = datetime.now()
 dt_string = now.strftime("%d_%m_%Y_%H_%M_%S")
-out = cv2.VideoWriter(f'simulation_v2_{dt_string}.avi', cv2.VideoWriter_fourcc(*'DIVX'), 30, (img_size, img_size))
+out = cv2.VideoWriter(f'video/simulation_v2_{dt_string}.avi', cv2.VideoWriter_fourcc(*'DIVX'), 30, (img_size, img_size))
 
 for i in range(num_step):
     print(i)
@@ -127,3 +127,4 @@ for i in range(num_step):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     out.write(image)
 out.release()
+
