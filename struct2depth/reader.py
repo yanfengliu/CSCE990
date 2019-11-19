@@ -74,10 +74,6 @@ class DataReader(object):
             self.file_lists['segment_file_list'], seed=seed,
             shuffle=self.shuffle,
             num_epochs=(1 if not self.shuffle else None))
-        cam_paths_queue = tf.train.string_input_producer(
-            self.file_lists['cam_file_list'], seed=seed,
-            shuffle=self.shuffle,
-            num_epochs=(1 if not self.shuffle else None))
         img_reader = tf.WholeFileReader()
         _, image_contents = img_reader.read(image_paths_queue)
         seg_reader = tf.WholeFileReader()
@@ -88,16 +84,13 @@ class DataReader(object):
         elif self.file_extension == 'png':
           image_seq = tf.image.decode_png(image_contents, channels=3)
           seg_seq = tf.image.decode_png(seg_contents, channels=3)
-
-      with tf.name_scope('load_intrinsics'):
-        cam_reader = tf.TextLineReader()
-        _, raw_cam_contents = cam_reader.read(cam_paths_queue)
-        rec_def = []
-        for _ in range(9):
-          rec_def.append([1.0])
-        raw_cam_vec = tf.decode_csv(raw_cam_contents, record_defaults=rec_def)
-        raw_cam_vec = tf.stack(raw_cam_vec)
-        intrinsics = tf.reshape(raw_cam_vec, [3, 3])
+        # intrinsics matrix in the format of
+        # [fx, 0, x0]
+        # [0, fy, y0]
+        # [0,  0,  1]
+        intrinsics = tf.constant(
+          [[343.85, 0, 205,69], [0, 344.89, 63.97], [0, 0, 1]], 
+          dtype=tf.float32)
 
       with tf.name_scope('convert_image'):
         image_seq = self.preprocess_image(image_seq)  # Converts to float.
