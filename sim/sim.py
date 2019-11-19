@@ -145,6 +145,10 @@ def prep_board_for_video(board):
     return image
 
 
+def choose_random_angle():
+    return np.random.randint(num_angles)
+
+
 board = get_new_board()
 draw = ImageDraw.Draw(board)
 obstacle_list = create_obstacles(num_obstacle)
@@ -154,10 +158,10 @@ empty_coords = get_empty_coords(image, img_size)
 robot_coord = choose_random_empty_coords(empty_coords)
 robot_rect = generate_robot_rect(robot_coord)
 draw = draw_robot(draw, robot_rect)
-robot_angle = np.random.randint(num_angles)
+robot_angle = choose_random_angle()
 angle_list = np.linspace(0, num_angles-1, num_angles)
-dt_string = get_time_str()
-out = init_video_writer(dt_string)
+time_str = get_time_str()
+out = init_video_writer(time_str)
 mp = MotionPlanner(max_random, min_dist)
 
 for i in range(num_step):
@@ -184,7 +188,7 @@ for i in range(num_step):
     d_col, d_row = step_vector
     [col_robot, row_robot] = robot_coord
     robot_coord = [col_robot + d_col, row_robot + d_row]
-    
+
     image = prep_board_for_video(board)
     out.write(image)
 out.release()

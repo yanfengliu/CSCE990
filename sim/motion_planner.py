@@ -39,15 +39,15 @@ class MotionPlanner():
             if mode == 'max':
                 idx = np.argmax(target_dist_group)
             elif mode == 'random':
-                if not override_random_counter:
+                if override_random_counter:
+                    idx = np.random.randint(low = 0, high=len(target_dist_group))
+                else:
                     if self.counter <= self.max_random:
-                        self.counter = 0
+                        self.counter += 1
                         idx = np.argmax(target_dist_group)
                     else:
-                        self.counter += 1
+                        self.counter = 0
                         idx = np.random.randint(low = 0, high=len(target_dist_group))
-                else:
-                    idx = np.random.randint(low = 0, high=len(target_dist_group))
             direction = target_choice_group[idx]
         else:
             direction = -1
