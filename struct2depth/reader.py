@@ -70,20 +70,12 @@ class DataReader(object):
             shuffle=self.shuffle,
             num_epochs=(1 if not self.shuffle else None)
         )
-        seg_paths_queue = tf.train.string_input_producer(
-            self.file_lists['segment_file_list'], seed=seed,
-            shuffle=self.shuffle,
-            num_epochs=(1 if not self.shuffle else None))
         img_reader = tf.WholeFileReader()
         _, image_contents = img_reader.read(image_paths_queue)
-        seg_reader = tf.WholeFileReader()
-        _, seg_contents = seg_reader.read(seg_paths_queue)
         if self.file_extension == 'jpg':
           image_seq = tf.image.decode_jpeg(image_contents)
-          seg_seq = tf.image.decode_jpeg(seg_contents, channels=3)
         elif self.file_extension == 'png':
           image_seq = tf.image.decode_png(image_contents, channels=3)
-          seg_seq = tf.image.decode_png(seg_contents, channels=3)
         # intrinsics matrix in the format of
         # [fx, 0, x0]
         # [0, fy, y0]
@@ -100,7 +92,7 @@ class DataReader(object):
           image_seq = self.augment_image_colorspace(image_seq)
 
       image_stack = self.unpack_images(image_seq)
-      seg_stack = self.unpack_images(seg_seq)
+      seg_stack = tf.zeros_like(image_stack, dtype=tf.uint8)
 
       if self.flipping_mode != FLIP_NONE:
         random_flipping = (self.flipping_mode == FLIP_RANDOM)
@@ -279,38 +271,13 @@ class DataReader(object):
     im, seg, intrinsics = crop_randomly(im, seg, intrinsics, out_h, out_w)
     return im, seg, intrinsics
 
-  def compile_file_list(self, data_dir, split, load_pose=False):
+  def compile_file_list(self, data_dir):
     """Creates a list of input files."""
     logging.info('data_dir: %s', data_dir)
-    with gfile.Open(os.path.join(data_dir, '%s.txt' % split), 'r') as f:
-      frames = f.readlines()
-      frames = [k.rstrip() for k in frames]
-    subfolders = [x.split(' ')[0] for x in frames]
-    frame_ids = [x.split(' ')[1] for x in frames]
-    image_file_list = [
-        os.path.join(data_dir, subfolders[i], frame_ids[i] + '.' +
-                     self.file_extension)
-        for i in range(len(frames))
-    ]
-    segment_file_list = [
-        os.path.join(data_dir, subfolders[i], frame_ids[i] + '-fseg.' +
-                     self.file_extension)
-        for i in range(len(frames))
-    ]
-    cam_file_list = [
-        os.path.join(data_dir, subfolders[i], frame_ids[i] + '_cam.txt')
-        for i in range(len(frames))
-    ]
+    image_list = os.listdir(data_dir)
+    image_file_list = [os.path.join(data_dir, x) for x in image_list]
     file_lists = {}
     file_lists['image_file_list'] = image_file_list
-    file_lists['segment_file_list'] = segment_file_list
-    file_lists['cam_file_list'] = cam_file_list
-    if load_pose:
-      pose_file_list = [
-          os.path.join(data_dir, subfolders[i], frame_ids[i] + '_pose.txt')
-          for i in range(len(frames))
-      ]
-      file_lists['pose_file_list'] = pose_file_list
     self.steps_per_epoch = len(image_file_list) // self.batch_size
     return file_lists
 
