@@ -6,95 +6,28 @@ import numpy as np
 import PIL.Image as Image
 import PIL.ImageDraw as ImageDraw
 
+from motion_planner import MotionPlanner
+from util import *
 
-def get_random_rect(img_size):
-    width = np.random.randint(low = 0.1 * img_size, high = 0.3 * img_size)
-    height = np.random.randint(low = 0.1 * img_size, high = 0.3 * img_size)
-    corners = [[0, 0], [width, 0], [width, height], [0, height], [0, 0]]
-    offset = np.random.randint(low = 0, high = 0.7 * img_size, size=(2,))
-    corners += offset
-    return corners
-
-
-def to_tuple(corners):
-    return [tuple(i) for i in corners]
-
-
-def get_dist(image, robot_coord, angle_vector):
-    [col_robot, row_robot] = robot_coord
-    [col_old, row_old] = robot_coord
-    [col_angle, row_angle] = robot_coord
-    count = 0
-    while( 
-        col_angle < img_size and col_angle >= 0 and 
-        row_angle < img_size and row_angle >= 0 and 
-        np.all(image[row_angle, col_angle, :] != np.array([255, 255, 255]))):
-
-        count += 1
-        col_old, row_old = col_angle, row_angle
-        d_col, d_row = angle_vector
-        col_angle += d_col
-        row_angle += d_row
-    dist_v = row_old - row_robot
-    dist_h = col_old - col_robot
-    dist = np.sqrt(dist_h ** 2 + dist_v ** 2)
-
-    return dist, col_old, row_old
-
-
-def majority_vote_weighted_sum(dists, angle_vectors):
-    num_dist = len(dists)
-    choices = np.linspace(0, num_dist-1, num_dist)
-    dist_groups = []
-    dist_group = []
-    choice_groups = []
-    choice_group = []
-    for i in range(num_dist):
-        dist = dists[i]
-        if dist > min_dist:
-            dist_group.append(dist)
-            choice_group.append(i)
-        elif len(dist_group) > 0:
-            dist_groups.append(dist_group)
-            choice_groups.append(choice_group)
-            dist_group = []
-            choice_group = []
-    if len(dist_group) > 0:
-        dist_groups.append(dist_group)
-        choice_groups.append(choice_group)
-    votes = []
-    for dist_group in dist_groups:
-        votes.append(len(dist_group))
-    votes = np.array(votes)
-    if len(votes) > 0:
-        choice = np.argmax(votes)
-        target_dist_group = dist_groups[choice]
-        target_choice_group = choice_groups[choice]
-        normalized_dist = target_dist_group / np.sum(target_dist_group)
-        target_choice_group = np.array(target_choice_group)
-        new_robot_angle = int(np.sum(target_choice_group * normalized_dist))
-        normalized_dist = np.expand_dims(normalized_dist, axis=-1)
-        target_angle_vectors = angle_vectors[target_choice_group]
-        direction = normalized_dist * target_angle_vectors
-        direction = np.sum(direction, 0)
-        return direction, new_robot_angle
-    else:
-        return None
 
 # constants
 img_size = 500
 robot_size = 5
-num_step = 1000
+num_step = 2000
 num_angles = 16
+max_random = 50
+min_obstacle = 4
 max_obstacle = 8
-min_dist = 100
-num_obstacle = np.random.randint(1, max_obstacle)
+min_dist = 25
+num_obstacle = np.random.randint(min_obstacle, max_obstacle)
 
 BACKGROUND_COLOR = (50, 50, 50)
 OBSTACLE_COLOR = (255, 255, 255)
 ROBOT_COLOR = (0, 255, 0)
 DISTANCE_COLOR = (255, 213, 3)
 WARNING_COLOR = (255, 0, 0)
+
+mp = MotionPlanner(max_random, min_dist)
 
 # NOTE: nparray is (row, col), ImageDraw is (col, row)
 
@@ -179,12 +112,12 @@ for i in range(num_step):
         if dist_map[j] <= min_dist:
             draw.line((col_robot, row_robot, col_end, row_end), fill=WARNING_COLOR, width = 3)
     
-    result = majority_vote_weighted_sum(visible_dists, angle_vectors)
+    result = mp.majority_vote_weighted_sum(visible_dists, angle_vectors)
     if result is not None:
         step_vector, d_angle = result
         robot_angle += d_angle - 2
     else:
-        step_vector, robot_angle = majority_vote_weighted_sum(dist_map, angle_vectors)
+        step_vector, robot_angle = mp.majority_vote_weighted_sum(dist_map, angle_vectors)
     d_col, d_row = step_vector
     robot_coord = [int(col_robot + d_col), int(row_robot + d_row)]
 
