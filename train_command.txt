@@ -1,3 +1,5 @@
 python -m train --data_dir=train --checkpoint_dir=ckpts --batch_size=1 --imagenet_ckpt=pre_trained/model-1000977
 
 python -m depth_from_video_in_the_wild.train --data_dir=depth_from_video_in_the_wild/data_example --checkpoint_dir=/tmp/my_experiment --train_steps=1 --imagenet_ckpt=depth_from_video_in_the_wild/pre_trained/model.ckpt
+
+python train.py --logtostderr --checkpoint_dir=C:/Users/yliu60/Documents/GitHub/CSCE990/struct2depth/checkpoints/checkpoints_baseline/model-154688 --data_dir=C:/Users/yliu60/Documents/GitHub/CSCE990/train --batch_size=1 --architecture=resnet

@@ -16,14 +16,14 @@
 
 """Reads data that is produced by dataset/gen_data.py."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import os
 import random
-from absl import logging
+
+import numpy as np
 import tensorflow as tf
+from absl import logging
 
 import util
 
@@ -64,7 +64,7 @@ class DataReader(object):
     with tf.name_scope('data_loading'):
       with tf.name_scope('enqueue_paths'):
         seed = random.randint(0, 2**31 - 1)
-        self.file_lists = self.compile_file_list(self.data_dir, self.input_file)
+        self.file_lists = self.compile_file_list(self.data_dir)
         image_paths_queue = tf.train.string_input_producer(
             self.file_lists['image_file_list'], seed=seed,
             shuffle=self.shuffle,
@@ -80,9 +80,8 @@ class DataReader(object):
         # [fx, 0, x0]
         # [0, fy, y0]
         # [0,  0,  1]
-        intrinsics = tf.constant(
-          [[343.85, 0, 205,69], [0, 344.89, 63.97], [0, 0, 1]], 
-          dtype=tf.float32)
+        intrinsics = tf.constant([343.85, 0, 205.69, 0, 344.89, 63.97, 0, 0, 1], dtype=tf.float32)
+        intrinsics = tf.reshape(intrinsics, [3, 3])
 
       with tf.name_scope('convert_image'):
         image_seq = self.preprocess_image(image_seq)  # Converts to float.

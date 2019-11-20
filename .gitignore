@@ -22,3 +22,4 @@ pre_trained/model-1000977.meta
 *.mp4
 *.avi
 *.json
+*.pbtxt
