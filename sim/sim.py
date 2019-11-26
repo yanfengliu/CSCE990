@@ -14,7 +14,8 @@ from util import *
 img_size = 500
 robot_size = 5
 num_step = 2000
-num_angles = 16
+# num_angles = 16
+num_angles = 8
 max_random = 50
 min_obstacle = 4
 max_obstacle = 8
@@ -34,12 +35,20 @@ WARNING_COLOR = (255, 0, 0)
 #        3           9
 #        4  5  6  7  8
 
+# angle_vectors = np.array([
+#     [-2, -2], [-2, -1], [-2,  0], [-2,  1], 
+#     [-2,  2], [-1,  2], [ 0,  2], [ 1,  2], 
+#     [ 2,  2], [ 2,  1], [ 2,  0], [ 2, -1], 
+#     [ 2, -2], [ 1, -2], [ 0, -2], [-1, -2]
+# ])
+
 angle_vectors = np.array([
-    [-2, -2], [-2, -1], [-2,  0], [-2,  1], 
-    [-2,  2], [-1,  2], [ 0,  2], [ 1,  2], 
-    [ 2,  2], [ 2,  1], [ 2,  0], [ 2, -1], 
-    [ 2, -2], [ 1, -2], [ 0, -2], [-1, -2]
+    [-2, -2], [-2,  0], [-2,  2], [ 0,  2],
+    [ 2,  2], [ 2,  0], [ 2, -2], [ 0, -2]
 ])
+
+# options = [-2, -1, 0, 1, 2]
+options = [-1, 0, 1]
 
 
 # NOTE: nparray is (row, col), ImageDraw is (col, row)
@@ -110,7 +119,7 @@ def get_new_board():
 
 
 def get_idx_around_angle(robot_angle):
-    idx = robot_angle + np.array([-2, -1, 0, 1, 2])
+    idx = robot_angle + np.array(options)
     idx = idx % num_angles
     idx = idx.astype(np.int)
     return idx
