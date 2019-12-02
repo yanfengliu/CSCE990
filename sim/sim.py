@@ -10,7 +10,7 @@ from motion_planner import MotionPlanner
 from util import *
 
 
-for seed_val in range(10, 20):
+for seed_val in :
     for dirction_val in [3, 5]:
         np.random.seed(seed_val)
         num_directions = dirction_val
@@ -187,16 +187,17 @@ for seed_val in range(10, 20):
         robot_coord = choose_random_empty_coords(empty_coords)
         previous_robot_coord = np.copy(robot_coord)
         robot_rect = generate_robot_rect(robot_coord)
-        # draw = draw_robot(draw, robot_rect)
+        draw = draw_robot(draw, robot_rect)
         robot_angle = choose_random_angle()
         angle_list = np.linspace(0, num_angles-1, num_angles)
-        # time_str = get_time_str()
-        # out = init_video_writer(time_str)
+        time_str = get_time_str()
+        out = init_video_writer(time_str)
         mp = MotionPlanner(max_random, min_dist)
         previous_robot_coords = []
         for i in range(num_step):
             print(i)
             board = get_new_board()
+            draw = draw_robot(draw, robot_rect)
             draw = ImageDraw.Draw(board)
             draw_obstacles(draw, obstacle_list)
             image = np.asarray(board)
@@ -206,7 +207,7 @@ for seed_val in range(10, 20):
 
             available_angle_vectors = angle_vectors[idx]
             available_angle_list = angle_list[idx]
-            # draw = draw_dists(draw, robot_coord, end_points, idx)
+            draw = draw_dists(draw, robot_coord, end_points, idx)
             step_choice = mp.majority_vote(visible_dists, 'random')
             if step_choice != -1:
                 robot_angle = available_angle_list[step_choice]
@@ -219,7 +220,7 @@ for seed_val in range(10, 20):
             [col_robot, row_robot] = robot_coord
             previous_robot_coords.append(np.copy(robot_coord))
             robot_coord = [col_robot + d_col, row_robot + d_row]
-        draw_path(previous_robot_coords, obstacle_list)
-        #     image = prep_board_for_video(board)
-        #     out.write(image)
-        # out.release()
+        # draw_path(previous_robot_coords, obstacle_list)
+            image = prep_board_for_video(board)
+            out.write(image)
+        out.release()

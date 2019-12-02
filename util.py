@@ -1,6 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import tensorflow as tf
 
 CMAP_DEFAULT = 'gray'
@@ -47,3 +48,8 @@ def normalize_depth_for_display(depth, pc=95, crop_percent=0, normalizer=None,
   keep_h = int(disp.shape[0] * (1 - crop_percent))
   disp = disp[:keep_h]
   return disp
+
+
+def mkdir_if_missing(d):
+    if not os.path.exists(d):
+        os.makedirs(d)
