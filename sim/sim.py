@@ -10,14 +10,14 @@ from motion_planner import MotionPlanner
 from util import *
 
 
-for seed_val in :
+for seed_val in [10, 11, 12, 17]:
     for dirction_val in [3, 5]:
         np.random.seed(seed_val)
         num_directions = dirction_val
         # constants
         img_size = 500
         robot_size = 5
-        num_step = 5000
+        num_step = 2000
         max_random = 50
         min_obstacle = 4
         max_obstacle = 8
@@ -111,8 +111,8 @@ for seed_val in :
 
 
         def init_video_writer(dt_string):
-            video_writer = cv2.VideoWriter(f'video/simulation_v1_{dt_string}.avi', 
-                cv2.VideoWriter_fourcc(*'DIVX'), 
+            video_writer = cv2.VideoWriter(f'video/{dt_string}.mp4', 
+                cv2.VideoWriter_fourcc(*'MP4V'), 
                 30, 
                 (img_size, img_size))
             return video_writer
@@ -190,14 +190,14 @@ for seed_val in :
         draw = draw_robot(draw, robot_rect)
         robot_angle = choose_random_angle()
         angle_list = np.linspace(0, num_angles-1, num_angles)
-        time_str = get_time_str()
-        out = init_video_writer(time_str)
+        # video_str = get_time_str()
+        video_str = f'seed_{seed_val}_angles_{dirction_val}'
+        out = init_video_writer(video_str)
         mp = MotionPlanner(max_random, min_dist)
         previous_robot_coords = []
         for i in range(num_step):
             print(i)
             board = get_new_board()
-            draw = draw_robot(draw, robot_rect)
             draw = ImageDraw.Draw(board)
             draw_obstacles(draw, obstacle_list)
             image = np.asarray(board)
