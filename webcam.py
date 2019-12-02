@@ -8,7 +8,7 @@ from params import Params
 FLAGS = Params()
 FLAGS.input_dir = 'input'
 FLAGS.output_dir = 'ouptut'
-FLAGS.checkpoint_path = 'model_zoo/model.ckpt'
+FLAGS.checkpoint_path = 'pre_trained/model'
 FLAGS.img_height = 128
 FLAGS.img_width = 416
 
