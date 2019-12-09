@@ -11,9 +11,11 @@ from util import *
 
 
 for seed_val in [10, 11, 12, 17]:
-    for dirction_val in [3, 5]:
+    for direction_val in [3, 5]:
+        img_dir = f'image/seed_{seed_val}_angles_{direction_val}'
+        mkdir_if_missing(img_dir)
         np.random.seed(seed_val)
-        num_directions = dirction_val
+        num_directions = direction_val
         # constants
         img_size = 500
         robot_size = 5
@@ -161,18 +163,23 @@ for seed_val in [10, 11, 12, 17]:
 
         def choose_random_angle():
             return np.random.randint(num_angles)
+        
 
-
-        def draw_path(previous_robot_coords, obstacle_list):
-            board = get_new_board()
-            draw = ImageDraw.Draw(board)
-            draw_obstacles(draw, obstacle_list)
+        def draw_path_so_far(draw, previous_robot_coords):
             for i in range(len(previous_robot_coords) - 1):
                 previous_robot_coord = previous_robot_coords[i]
                 robot_coord = previous_robot_coords[i+1]
                 [col_robot, row_robot] = robot_coord
                 [col_end, row_end] = previous_robot_coord
                 draw.line((col_robot, row_robot, col_end, row_end), fill=PATH_COLOR, width = 3)
+            return draw
+
+
+        def draw_path(previous_robot_coords, obstacle_list):
+            board = get_new_board()
+            draw = ImageDraw.Draw(board)
+            draw_obstacles(draw, obstacle_list)
+            draw = draw_path_so_far(draw, previous_robot_coords)
             image = np.asarray(board)
             image = image.astype(np.uint8)
             cv2.imwrite(f'path/{num_directions}/{num_directions}_{seed_val}.png', image)
@@ -191,7 +198,7 @@ for seed_val in [10, 11, 12, 17]:
         robot_angle = choose_random_angle()
         angle_list = np.linspace(0, num_angles-1, num_angles)
         # video_str = get_time_str()
-        video_str = f'seed_{seed_val}_angles_{dirction_val}'
+        video_str = f'seed_{seed_val}_angles_{direction_val}'
         out = init_video_writer(video_str)
         mp = MotionPlanner(max_random, min_dist)
         previous_robot_coords = []
@@ -221,6 +228,9 @@ for seed_val in [10, 11, 12, 17]:
             previous_robot_coords.append(np.copy(robot_coord))
             robot_coord = [col_robot + d_col, row_robot + d_row]
         # draw_path(previous_robot_coords, obstacle_list)
+            draw = draw_path_so_far(draw, previous_robot_coords)
             image = prep_board_for_video(board)
-            out.write(image)
-        out.release()
+            img_str = f'image/seed_{seed_val}_angles_{direction_val}/{i}.png'
+            cv2.imwrite(img_str, image)
+        #     out.write(image)
+        # out.release()

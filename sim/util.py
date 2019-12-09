@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 
 def get_random_rect(img_size):
@@ -34,3 +35,8 @@ def get_dist_at_angle(image, img_size, robot_coord, angle_vector):
     dist = np.sqrt(dist_h ** 2 + dist_v ** 2)
 
     return dist, col_old, row_old
+
+
+def mkdir_if_missing(d):
+    if not os.path.exists(d):
+        os.makedirs(d)
