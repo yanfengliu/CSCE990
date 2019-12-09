@@ -23,3 +23,4 @@ pre_trained/model-1000977.meta
 *.avi
 *.json
 *.pbtxt
+sim/.DS_Store
