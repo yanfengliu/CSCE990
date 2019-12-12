@@ -26,7 +26,7 @@ inference_model, sess = depth_model.init_inference_model(FLAGS)
 
 while rval:
     rval, image = vc.read()
-    image = util.prep_image(image)
+    image = util.prep_image_for_model(image)
     depth = inference_model.inference_depth(image, sess)
     depth = np.squeeze(depth)
     depth = util.normalize_depth_for_display(depth)
